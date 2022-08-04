@@ -6,7 +6,7 @@ impl Solution {
     fn subsets_rec(bm: &BTreeMap<i32, i32>, mut it: Iter<i32, i32>) -> Option<Vec<Vec<i32>>> {
 
         let (k, repeats) = it.next()?;
-        match Self::subsets_rec(bm, it.clone()) {
+        match Self::subsets_rec(bm, it) {
             Some(v) => {
                 Some(
                     (0..=*repeats).map(|count| {

@@ -34,13 +34,9 @@ impl Solution {
             if digit == 0 {i+=1;continue;}
 
             let mult = num_digits - i - 1;
-            
-            // println!("{digit}");
 
             for _ in 0..(if sign {-digit} else {digit}) {
                 out = out + Wrapping(((10 as i32).pow(mult as u32)) * (if sign {-1} else {1}));
-
-                // println!("{out}");
 
                 if (out < Wrapping(0)) != (sign){
                     return 0;
