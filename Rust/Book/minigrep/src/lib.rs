@@ -10,13 +10,20 @@ pub struct Config {
 
 impl Config {
 
-    pub fn new(args: &[String]) -> Result<Config, &'static str> {
+    pub fn new(
+        mut args: impl Iterator<Item = String>,
+    ) -> Result<Config, &'static str> {
+        args.next();
 
-        if args.len() < 3 {
-            return Err("Not enough arguments");
-        } 
-        let query = args[1].clone();
-        let filename = args[2].clone();
+ 
+        let query = args.next().ok_or(
+            "Didn't get a query string"
+        )?;
+
+        let filename = args.next().ok_or(
+            "Didn't get a filename"
+        )?;
+
         let ignore_case = env::var("IGNORE_CASE").is_ok();
 
         Ok(Config{query, filename, ignore_case})
@@ -41,7 +48,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 
 fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     contents.lines()
-        .filter(|l| l.contains(&query))
+        .filter(|l| l.contains(query))
         .collect()
 }
 
