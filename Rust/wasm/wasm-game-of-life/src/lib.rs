@@ -5,6 +5,10 @@ use std::convert::From;
 use std::error::Error;
 use std::fmt;
 type Res<T> = Result<T, &'static str>;
+use js_sys::Math::random;
+
+extern crate web_sys;
+use web_sys::console;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -47,15 +51,18 @@ pub struct Universe {
 #[wasm_bindgen]
 impl Universe {
 
-    pub fn new() -> Self {
-        let (height, width) = (64, 64);
-        
+    pub fn new(height: u32, width:u32) -> Self {
+        utils::set_panic_hook();
+        console::log_2(&"Hello from Rust!".into(), &"second_arg".into());
+
         Universe { 
-            width: 64, height: 64, 
-            cells: (0..width * height).map(|i| {
-                Cell::from(i % 2 == 0 || i % 5 == 0)
-            }).collect()
+            width, height,
+            cells: (0..width * height).map(|_| Dead).collect()
         }
+    }
+    
+    pub fn cells(&self) -> *const Cell {
+        self.cells.as_ptr()
     }
 
     pub fn render(&self) -> String {
@@ -71,6 +78,34 @@ impl Universe {
         }
     }
 
+    pub fn toggle(&mut self, row: u32, col: u32) {
+        let idx = self.get_index(row, col).unwrap();
+        self.cells[idx] = Cell::from(self.cells[idx] == Dead);
+    }
+
+    pub fn toggle_on(&mut self, row: u32, col: u32) {
+        let idx = self.get_index(row, col).unwrap();
+        self.cells[idx] = Alive
+    }
+
+    pub fn toggle_off(&mut self, row: u32, col: u32) {
+        let idx = self.get_index(row, col).unwrap();
+        self.cells[idx] = Dead
+    }
+
+
+    pub fn reset(&mut self) {
+        for i in 0..self.cells.len() {
+            self.cells[i] = Dead;
+        }
+    }
+
+    pub fn randomize(&mut self, p: f64) {
+        for i in 0..self.cells.len() {
+            self.cells[i] = Cell::from(random() < p);
+        }
+    }
+
     fn get_rc(&self, idx: usize) -> Res<(u32, u32)> {
         if idx >= self.cells.len() {
             Err("Out of bounds")
@@ -78,12 +113,16 @@ impl Universe {
             Ok((idx as u32 / self.width, idx as u32 % self.width))
         }
     }
+    
 
     fn live_neighbor_count(&self, row: u32, col: u32) -> u32 {
         let mut cnt = 0;
+
         for row_iter in row as i32-1..=row as i32+1 {
-            for col_iter in col - 1..=col+1 {
-                let (r, c) = (row_iter as u32 % self.height, col_iter as u32 % self.width);
+            for col_iter in col as i32 - 1..=col as i32+1 {
+
+                let c = col_iter as u32 % self.width;
+                let r: u32 = row_iter as u32 % self.height;
 
                 if r  == row  && c == col {
                     continue;
